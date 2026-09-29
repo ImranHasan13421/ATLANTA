@@ -89,7 +89,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.mic_rounded, color: AppColors.neonCyan),
+            icon: Icon(Icons.mic_rounded, color: AppColors.neonCyan),
             onPressed: () {
               SoundEffectsService.instance.playClick();
               context.push('/voice');

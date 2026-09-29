@@ -181,7 +181,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                           height: 26,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: const RadialGradient(
+                            gradient: RadialGradient(
                               colors: [AppColors.neonCyan, AppColors.primaryBlue],
                             ),
                           ),
@@ -264,7 +264,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                               color: AppColors.primaryBlue.withValues(alpha: 0.15),
                               border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.4)),
                             ),
-                            child: const Icon(Icons.mic_rounded, color: AppColors.neonCyan, size: 14),
+                            child: Icon(Icons.mic_rounded, color: AppColors.neonCyan, size: 14),
                           ),
                         ),
                       ],
@@ -303,7 +303,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.arrow_right_rounded, color: AppColors.neonCyan, size: 14),
+                                Icon(Icons.arrow_right_rounded, color: AppColors.neonCyan, size: 14),
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
@@ -350,7 +350,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                       child: Row(
                         children: [
-                          const SizedBox(
+                          SizedBox(
                             width: 12,
                             height: 12,
                             child: CircularProgressIndicator(
@@ -414,7 +414,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                             height: 34,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: const LinearGradient(
+                              gradient: LinearGradient(
                                 colors: [AppColors.neonCyan, AppColors.primaryBlue],
                               ),
                               boxShadow: [
@@ -507,8 +507,8 @@ class _MessageBubble extends StatelessWidget {
                 vertical: AppConstants.spacingMd,
               ),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primaryBlue, Color(0xFF1E5BB0)],
+                gradient: LinearGradient(
+                  colors: [AppColors.primaryBlue, const Color(0xFF1E5BB0)],
                 ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),

@@ -36,7 +36,7 @@ class CalendarScreen extends StatelessWidget {
                           color: AppColors.neonCyan.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.calendar_month_rounded,
                           color: AppColors.neonCyan,
                           size: 16,
@@ -89,7 +89,7 @@ class CalendarScreen extends StatelessWidget {
                               ),
                               Text(
                                 _monthName(DateTime.now().month),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppColors.primaryBlue,
                                   fontSize: 8.5,
                                   fontWeight: FontWeight.bold,

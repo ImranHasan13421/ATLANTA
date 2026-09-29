@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -10,10 +11,13 @@ import '../../core/services/task_service.dart';
 import '../../core/services/reminder_service.dart';
 import '../../core/services/device_service.dart';
 import '../../core/services/activity_service.dart';
-import '../../core/services/brain_service.dart';
 import '../../core/services/sound_effects_service.dart';
+import '../../core/services/ota_update_service.dart';
+import '../../core/services/weather_service.dart';
+import '../../core/services/native_device_service.dart';
 
-/// ATLANTA Horizontal Landscape AI Command Center Dashboard.
+/// ATLANTA Horizontal Landscape AI Command Center Dashboard with Real Hardware Telemetry,
+/// Real-time Weather, In-App OTA Update System, and Sophisticated Cyber Aesthetics.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -22,7 +26,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  final _commandController = TextEditingController();
+
   late AnimationController _orbPulseController;
   late AnimationController _hudRotateController;
   late AnimationController _scanlineController;
@@ -30,7 +34,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _hudRotateAnim;
   late Animation<double> _scanlineAnim;
   bool _isProcessing = false;
-  String _lastResponse = '';
+
+  // Live real-time hardware telemetry & clock
+  Timer? _telemetryTimer;
+  Timer? _otaCheckTimer;
+  DateTime _currentTime = DateTime.now();
+  double _cpuPercent = 34.0;
+  StorageMetrics _storageMetrics = const StorageMetrics(
+    totalBytes: 128000000000,
+    usedBytes: 74240000000,
+    freeBytes: 53760000000,
+    percentUsed: 58.0,
+  );
+  NetworkMetrics _networkMetrics = const NetworkMetrics(
+    isConnected: true,
+    type: 'wifi',
+    networkName: 'Neural Wi-Fi 5G',
+    signalStrengthPercent: 94,
+  );
 
   @override
   void initState() {
@@ -60,36 +81,56 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       CurvedAnimation(parent: _scanlineController, curve: Curves.linear),
     );
 
+    _fetchHardwareTelemetry();
+
+    // Periodic telemetry and clock updater
+    _telemetryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      setState(() => _currentTime = DateTime.now());
+      if (timer.tick % 3 == 0) {
+        _fetchHardwareTelemetry();
+      }
+    });
+
+    // Check for In-App OTA Update and welcome sound
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SoundEffectsService.instance.playIntroVoice();
+      _otaCheckTimer = Timer(const Duration(milliseconds: 1400), () async {
+        if (!mounted) return;
+        final hasUpdate = await OtaUpdateService.instance.checkForUpdates(isAutomatic: true);
+        if (hasUpdate && mounted) {
+          OtaUpdateService.instance.promptUpdateDialog(context);
+        }
+      });
     });
+  }
+
+  Future<void> _fetchHardwareTelemetry() async {
+    try {
+      final cpu = await NativeDeviceService.instance.getCpuUsage();
+      final storage = await NativeDeviceService.instance.getStorageUsage();
+      final network = await NativeDeviceService.instance.getNetworkInfo();
+      if (mounted) {
+        setState(() {
+          _cpuPercent = cpu;
+          _storageMetrics = storage;
+          _networkMetrics = network;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    _otaCheckTimer?.cancel();
+    _telemetryTimer?.cancel();
     _orbPulseController.dispose();
     _hudRotateController.dispose();
     _scanlineController.dispose();
-    _commandController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleCommand(String text) async {
-    if (text.trim().isEmpty || _isProcessing) return;
-    SoundEffectsService.instance.playClick();
-    _commandController.clear();
 
-    setState(() => _isProcessing = true);
-
-    final result = await BrainService.instance.processCommand(text, speakResponse: true);
-
-    if (mounted) {
-      setState(() {
-        _isProcessing = false;
-        _lastResponse = result.displayText;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ReminderService.instance,
         DeviceService.instance,
         ActivityService.instance,
+        WeatherService.instance,
       ]),
       builder: (context, _) => _buildLandscapeLayout(),
     );
@@ -119,16 +161,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           SafeArea(
             child: Row(
               children: [
-                // ═══ LEFT: Nav Rail + Today Card + Quote ═══
+                // ═══ LEFT: Nav Rail + Live System Telemetry (CPU/Storage/Network) ═══
                 _buildLeftSection(),
 
-                // ═══ CENTER: Atlanta AI Core ═══
+                // ═══ CENTER: Clock + Real Weather + Atlanta AI Core + Input Bar ═══
                 Expanded(
-                  flex: 4,
+                  flex: 5,
                   child: _buildCenterSection(),
                 ),
 
-                // ═══ RIGHT: System Status Dashboard ═══
+                // ═══ RIGHT: 4 Activities + Tasks + Reminders Box ═══
                 _buildRightSection(),
               ],
             ),
@@ -139,39 +181,62 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   // ──────────────────────────────────────────────────────────────
-  // LEFT SECTION: Nav Rail + Today Card + Motivational Quote
+  // LEFT SECTION: Nav Rail + Actual Live Telemetry (CPU, Storage, Network)
   // ──────────────────────────────────────────────────────────────
   Widget _buildLeftSection() {
     return SizedBox(
-      width: 220,
+      width: 236,
       child: Padding(
-        padding: const EdgeInsets.only(left: 8, top: 6, bottom: 6),
+        padding: const EdgeInsets.only(left: 8, top: 6, bottom: 6, right: 4),
         child: Column(
           children: [
-            // ── ATLANTA logo ──
+            // ── ATLANTA logo & identity ──
             Row(
               children: [
-                Text(
-                  'ATLANTA',
-                  style: AppTypography.brandName.copyWith(
-                    fontSize: 16,
-                    letterSpacing: 4,
-                    color: AppColors.primaryWhite,
+                Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.neonCyan.withValues(alpha: 0.4),
+                        blurRadius: 8,
+                      ),
+                    ],
                   ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.asset('assets/images/atlanta_logo.png', fit: BoxFit.cover),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'ATLANTA',
+                    style: AppTypography.brandName.copyWith(
+                      fontSize: 14,
+                      letterSpacing: 2.0,
+                      color: AppColors.primaryWhite,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.4)),
+                  ),
+                  child: Text('CORE v1.2', style: TextStyle(color: AppColors.neonCyan, fontSize: 8, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
-            Text(
-              'Your AI Assistant',
-              style: AppTypography.labelSmall.copyWith(
-                color: AppColors.neonCyan,
-                fontSize: 8,
-                letterSpacing: 1.2,
-              ),
-            ),
             const SizedBox(height: 6),
 
-            // ── Nav Rail + Today Card Row ──
+            // ── Nav Rail + Live Hardware Telemetry Row ──
             Expanded(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,28 +244,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   // Nav Rail
                   _buildNavRail(),
                   const SizedBox(width: 6),
-                  // Today Card + Quote
-                  Expanded(child: _buildTodayAndQuote()),
+                  // Live CPU, Storage & Network Status Card
+                  Expanded(child: _buildLiveSystemTelemetryCard()),
                 ],
               ),
             ),
 
+            const SizedBox(height: 4),
             // ── Bottom greeting card ──
             _buildGreetingCard(),
-
-            const SizedBox(height: 4),
-            // ── Bottom branding ──
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'ATLANTA',
-                style: AppTypography.monoSmall.copyWith(
-                  color: AppColors.mutedText,
-                  fontSize: 7,
-                  letterSpacing: 3,
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -211,20 +263,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     String currentRoute = '/home';
     try {
       currentRoute = GoRouterState.of(context).uri.path;
-    } catch (_) {
-      // Fallback for testing without GoRouter
-    }
+    } catch (_) {}
 
     final navItems = [
       _NavItem(Icons.home_rounded, 'Home', '/home'),
       _NavItem(Icons.chat_bubble_rounded, 'Chat', '/assistant'),
-      _NavItem(Icons.build_rounded, 'Tools', '/tasks'),
+      _NavItem(Icons.build_rounded, 'Tasks', '/tasks'),
       _NavItem(Icons.apps_rounded, 'Apps', '/devices'),
-      _NavItem(Icons.person_rounded, 'Profile', '/settings'),
+      _NavItem(Icons.settings_rounded, 'Settings', '/settings'),
     ];
 
     return Container(
-      width: 48,
+      width: 46,
       padding: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.4),
@@ -249,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   } catch (_) {}
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2.5),
+                  padding: const EdgeInsets.symmetric(vertical: 3),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -302,129 +352,215 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTodayAndQuote() {
-    final now = DateTime.now();
-    final dateStr = DateFormat('EEE, dd MMM yyyy').format(now);
-    final pendingTasks = TaskService.instance.pendingCount;
-    final activeReminders = ReminderService.instance.activeReminders.length;
+  /// Live System Hardware Telemetry Card: Actual CPU usage %, Used storage %, and Network Status
+  Widget _buildLiveSystemTelemetryCard() {
+    final cpuColor = _cpuPercent > 80
+        ? AppColors.error
+        : (_cpuPercent > 50 ? AppColors.warning : AppColors.neonCyan);
 
-    return Column(
-      children: [
-        // ── TODAY card ──
-        _GlassmorphicCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'TODAY',
-                style: AppTypography.labelLarge.copyWith(
-                  fontSize: 11,
-                  letterSpacing: 2,
-                  color: AppColors.primaryWhite,
-                ),
-              ),
-              Text(
-                dateStr,
-                style: AppTypography.monoSmall.copyWith(
-                  fontSize: 8,
-                  color: AppColors.secondaryText,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _TodayItem(
-                icon: Icons.chat_bubble_outline_rounded,
-                text: '${ActivityService.instance.activities.length} Activities',
-                color: AppColors.neonCyan,
-              ),
-              Divider(color: AppColors.neonCyan.withValues(alpha: 0.15), height: 8),
-              _TodayItem(
-                icon: Icons.check_box_outlined,
-                text: '$pendingTasks Tasks Pending',
-                color: AppColors.warning,
-              ),
-              Divider(color: AppColors.neonCyan.withValues(alpha: 0.15), height: 8),
-              _TodayItem(
-                icon: Icons.code_rounded,
-                text: '$activeReminders Reminders',
-                color: AppColors.success,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 6),
+    final storageColor = _storageMetrics.percentUsed > 85
+        ? AppColors.error
+        : AppColors.primaryBlue;
 
-        // ── Motivational Quote ──
-        _GlassmorphicCard(
-          child: Row(
+    final isWifi = _networkMetrics.type == 'wifi';
+
+    return _GlassmorphicCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Icon(Icons.graphic_eq_rounded, color: AppColors.neonCyan, size: 14),
-              const SizedBox(width: 6),
+              Icon(Icons.developer_board_rounded, color: AppColors.neonCyan, size: 13),
+              const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  'Better plans today, bigger dreams tomorrow.\n— ATLANTA',
+                  'LIVE TELEMETRY',
                   style: AppTypography.monoSmall.copyWith(
-                    fontSize: 7.5,
-                    color: AppColors.secondaryText,
-                    height: 1.5,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                    color: AppColors.primaryWhite,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.success,
+                  boxShadow: [
+                    BoxShadow(color: AppColors.success.withValues(alpha: 0.6), blurRadius: 4),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 6),
+          const Divider(color: AppColors.border, height: 1),
+          const SizedBox(height: 6),
+
+          // ── 1. ACTUAL CPU USAGE ──
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: const [
+                    Icon(Icons.memory_rounded, size: 12, color: AppColors.secondaryText),
+                    SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'CPU Load',
+                        style: TextStyle(color: AppColors.secondaryText, fontSize: 8.5),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '${_cpuPercent.toStringAsFixed(1)}%',
+                style: TextStyle(color: cpuColor, fontSize: 9.5, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: (_cpuPercent / 100.0).clamp(0.05, 1.0),
+              minHeight: 4,
+              backgroundColor: AppColors.cardSurface,
+              valueColor: AlwaysStoppedAnimation<Color>(cpuColor),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // ── 2. ACTUAL STORAGE USAGE ──
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: const [
+                    Icon(Icons.storage_rounded, size: 12, color: AppColors.secondaryText),
+                    SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'Used Storage',
+                        style: TextStyle(color: AppColors.secondaryText, fontSize: 8.5),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '${_storageMetrics.percentUsed.toStringAsFixed(0)}%',
+                style: TextStyle(color: storageColor, fontSize: 9.5, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: (_storageMetrics.percentUsed / 100.0).clamp(0.05, 1.0),
+              minHeight: 4,
+              backgroundColor: AppColors.cardSurface,
+              valueColor: AlwaysStoppedAnimation<Color>(storageColor),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${_storageMetrics.formattedUsed} / ${_storageMetrics.formattedTotal}',
+            style: const TextStyle(color: AppColors.mutedText, fontSize: 7),
+          ),
+          const SizedBox(height: 8),
+
+          // ── 3. CONNECTED NETWORK STATUS ──
+          Row(
+            children: [
+              Icon(
+                isWifi ? Icons.wifi_rounded : Icons.cell_tower_rounded,
+                size: 13,
+                color: _networkMetrics.isConnected ? AppColors.success : AppColors.error,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  _networkMetrics.networkName,
+                  style: const TextStyle(
+                    color: AppColors.primaryWhite,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Row(
+            children: [
+              Text(
+                isWifi ? 'Wi-Fi' : 'Cellular',
+                style: TextStyle(
+                  color: isWifi ? AppColors.neonCyan : Colors.purpleAccent,
+                  fontSize: 7.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${_networkMetrics.signalStrengthPercent}% signal',
+                style: const TextStyle(color: AppColors.mutedText, fontSize: 7),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildGreetingCard() {
-    final timeStr = DateFormat('h:mm a').format(DateTime.now());
-
     return _GlassmorphicCard(
       child: Row(
         children: [
-          // Atlanta AI icon
           Container(
-            width: 28,
-            height: 28,
+            width: 24,
+            height: 24,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.neonCyan.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                ),
-              ],
+              shape: BoxShape.circle,
+              color: AppColors.primaryBlue.withValues(alpha: 0.25),
+              border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.5)),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                'assets/images/atlanta_logo.png',
-                fit: BoxFit.cover,
-              ),
-            ),
+            child: Icon(Icons.psychology_rounded, color: AppColors.neonCyan, size: 14),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hey Imran! 👋',
-                  style: AppTypography.labelLarge.copyWith(fontSize: 11),
+                  'Hey Imran 👋',
+                  style: AppTypography.labelLarge.copyWith(fontSize: 10, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  "I'm Atlanta, your AI assistant. Ask me anything.",
-                  style: AppTypography.bodySmall.copyWith(
-                    fontSize: 7.5,
-                    color: AppColors.secondaryText,
+                  'Neural Mesh Online',
+                  style: AppTypography.monoSmall.copyWith(
+                    fontSize: 7,
+                    color: AppColors.neonCyan,
                   ),
                 ),
               ],
             ),
-          ),
-          Text(
-            timeStr,
-            style: AppTypography.monoSmall.copyWith(fontSize: 7, color: AppColors.mutedText),
           ),
         ],
       ),
@@ -432,176 +568,260 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   // ──────────────────────────────────────────────────────────────
-  // CENTER SECTION: Atlanta AI Core Orb + HUD Rings + Input Bar
+  // CENTER SECTION: Live Clock + Real Weather + Atlanta AI Core Orb + Input
   // ──────────────────────────────────────────────────────────────
   Widget _buildCenterSection() {
+    final weather = WeatherService.instance.currentWeather;
+
+    final timeFormatted = DateFormat('hh:mm:ss a').format(_currentTime);
+    final dateFormatted = DateFormat('EEE, dd MMM yyyy').format(_currentTime);
+
     return Column(
       children: [
-        // ── Title ──
-        const SizedBox(height: 4),
-        Text(
-          'ATLANTA',
-          style: AppTypography.brandName.copyWith(
-            fontSize: 14,
-            letterSpacing: 6,
-            color: AppColors.primaryWhite.withValues(alpha: 0.9),
-          ),
-        ),
-        Text(
-          'AI ASSISTANT',
-          style: AppTypography.monoSmall.copyWith(
-            fontSize: 8,
-            letterSpacing: 3,
-            color: AppColors.neonCyan.withValues(alpha: 0.7),
+        // ── TOP HUD BAR: Real-time Clock & Present Location Weather ──
+        Padding(
+          padding: const EdgeInsets.only(top: 4, left: 6, right: 6),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.25)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.neonCyan.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Live Digital Clock
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.schedule_rounded, color: AppColors.neonCyan, size: 16),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              timeFormatted,
+                              style: AppTypography.monoSmall.copyWith(
+                                color: AppColors.primaryWhite,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                letterSpacing: 1.0,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              dateFormatted,
+                              style: TextStyle(color: AppColors.secondaryText, fontSize: 8),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Live Present Location Weather Widget
+                Flexible(
+                  child: GestureDetector(
+                    onTap: () => WeatherService.instance.refreshWeather(),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primaryBlue.withValues(alpha: 0.2),
+                          ),
+                          child: Icon(weather.icon, color: Colors.amber, size: 18),
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      weather.cityName,
+                                      style: const TextStyle(
+                                        color: AppColors.primaryWhite,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 10,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    weather.formattedTemp,
+                                    style: TextStyle(
+                                      color: AppColors.neonCyan,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                '${weather.condition} • ${weather.humidity}% hum',
+                                style: const TextStyle(color: AppColors.mutedText, fontSize: 7.5),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
 
-        // ── Central Orb with HUD rings ──
+        // ── Main Atlanta Core AI Orb with Holographic HUD Rings ──
         Expanded(
           child: Center(
-            child: AnimatedBuilder(
-              animation: Listenable.merge([_orbPulseAnim, _hudRotateAnim]),
-              builder: (context, _) {
-                return GestureDetector(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Rotating outer HUD dashed ring
+                AnimatedBuilder(
+                  animation: _hudRotateAnim,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: _hudRotateAnim.value,
+                      child: CustomPaint(
+                        size: const Size(200, 200),
+                        painter: _HudRingPainter(
+                          color: AppColors.neonCyan.withValues(alpha: 0.35),
+                          isDashed: true,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                // Reverse rotating inner HUD ring
+                AnimatedBuilder(
+                  animation: _hudRotateAnim,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: -_hudRotateAnim.value * 0.7,
+                      child: CustomPaint(
+                        size: const Size(160, 160),
+                        painter: _HudRingPainter(
+                          color: AppColors.primaryBlue.withValues(alpha: 0.4),
+                          isDashed: false,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                // Concentric Holographic Pulse Wave
+                AnimatedBuilder(
+                  animation: _orbPulseAnim,
+                  builder: (context, child) {
+                    return Container(
+                      width: 140 * _orbPulseAnim.value,
+                      height: 140 * _orbPulseAnim.value,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.neonCyan.withValues(alpha: (1.0 - _orbPulseAnim.value) * 0.5),
+                          width: 1.5,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                // Core AI Orb — tap navigates to voice screen
+                GestureDetector(
                   onTap: () {
                     SoundEffectsService.instance.playWake();
                     context.push('/voice');
                   },
-                  child: SizedBox(
-                    width: 260,
-                    height: 260,
-                    child: CustomPaint(
-                      painter: _CentralHudPainter(
-                        pulseValue: _orbPulseAnim.value,
-                        rotationValue: _hudRotateAnim.value,
-                        isProcessing: _isProcessing,
-                      ),
-                      child: Center(
-                        child: AtlantaOrb(
-                          size: 70,
-                          state: _isProcessing ? OrbState.thinking : OrbState.idle,
-                        ),
-                      ),
-                    ),
+                  child: AtlantaOrb(
+                    size: 114,
+                    state: _isProcessing ? OrbState.thinking : OrbState.idle,
+                    onTap: () {
+                      SoundEffectsService.instance.playWake();
+                      context.push('/voice');
+                    },
                   ),
-                );
-              },
+                ),
+
+                // Futuristic Holographic Corner Brackets
+                const SizedBox(
+                  width: 210,
+                  height: 210,
+                  child: CustomPaint(painter: _HoloCornerPainter()),
+                ),
+              ],
             ),
           ),
         ),
 
-        // ── Response text ──
-        if (_lastResponse.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _GlassmorphicCard(
-              child: Row(
-                children: [
-                  Icon(Icons.auto_awesome, color: AppColors.neonCyan, size: 14),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _lastResponse,
-                      style: AppTypography.bodySmall.copyWith(
-                        fontSize: 9,
-                        color: AppColors.primaryWhite,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+
+
+        // ── Voice Mode Navigation Pill Underneath Orb ──
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: GestureDetector(
+            onTap: () {
+              SoundEffectsService.instance.playWake();
+              context.push('/voice');
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.35)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.neonCyan.withValues(alpha: 0.15),
+                    blurRadius: 10,
                   ),
                 ],
               ),
-            ),
-          ),
-
-        // ── Input Bar ──
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-          child: Row(
-            children: [
-              Expanded(
-                child: _GlassmorphicCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                  child: Row(
-                    children: [
-                      Icon(Icons.chat_rounded, color: AppColors.mutedText, size: 16),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: _commandController,
-                          onSubmitted: _handleCommand,
-                          style: const TextStyle(
-                            color: AppColors.primaryWhite,
-                            fontSize: 11,
-                          ),
-                          decoration: const InputDecoration(
-                            hintText: 'Type a message...',
-                            hintStyle: TextStyle(color: AppColors.mutedText, fontSize: 11),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(vertical: 8),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Mic button
-              GestureDetector(
-                onTap: () {
-                  SoundEffectsService.instance.playWake();
-                  context.push('/voice');
-                },
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [AppColors.neonCyan, AppColors.primaryBlue],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.mic_rounded, color: AppColors.neonCyan, size: 14),
+                  const SizedBox(width: 8),
+                  Text(
+                    'TAP ORB TO ENTER VOICE MODE',
+                    style: AppTypography.monoSmall.copyWith(
+                      color: AppColors.primaryWhite,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.neonCyan.withValues(alpha: 0.5),
-                        blurRadius: 14,
-                        spreadRadius: 1,
-                      ),
-                    ],
                   ),
-                  child: const Icon(Icons.mic_rounded, color: Colors.white, size: 20),
-                ),
+                  const SizedBox(width: 8),
+                  Icon(Icons.arrow_forward_ios_rounded, color: AppColors.neonCyan, size: 10),
+                ],
               ),
-              const SizedBox(width: 6),
-              // Send button
-              GestureDetector(
-                onTap: () => _handleCommand(_commandController.text),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.primaryBlue.withValues(alpha: 0.3),
-                    border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.6)),
-                  ),
-                  child: const Icon(Icons.send_rounded, color: AppColors.neonCyan, size: 16),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // ── Bottom tagline ──
-        Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text(
-            'Smarter Conversations. A Brighter You.',
-            style: AppTypography.monoSmall.copyWith(
-              fontSize: 7,
-              color: AppColors.neonCyan.withValues(alpha: 0.5),
-              letterSpacing: 1,
             ),
           ),
         ),
@@ -610,123 +830,195 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   // ──────────────────────────────────────────────────────────────
-  // RIGHT SECTION: Status Dashboard + Online Badge
+  // RIGHT SECTION: Box with 4 Activities, Tasks & Reminders
   // ──────────────────────────────────────────────────────────────
   Widget _buildRightSection() {
-    final onlineDevices = DeviceService.instance.onlineCount;
+    final activities = ActivityService.instance.activities.take(4).toList();
+    final pendingTasks = TaskService.instance.pendingCount;
+    final activeReminders = ReminderService.instance.activeReminders.length;
 
     return SizedBox(
-      width: 160,
+      width: 220,
       child: Padding(
-        padding: const EdgeInsets.only(right: 8, top: 6, bottom: 6),
-        child: Column(
-          children: [
-            // ── Online status ──
-            _GlassmorphicCard(
-              child: Row(
+        padding: const EdgeInsets.only(right: 8, top: 6, bottom: 6, left: 4),
+        child: _GlassmorphicCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Box Header
+              Row(
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.success,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.success.withValues(alpha: 0.6),
-                          blurRadius: 6,
-                        ),
-                      ],
+                  Icon(Icons.dashboard_customize_rounded, color: AppColors.neonCyan, size: 14),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text(
+                      'OPERATIONS & TASKS',
+                      style: TextStyle(
+                        color: AppColors.primaryWhite,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 9.5,
+                        letterSpacing: 0.8,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.radar_rounded, color: AppColors.neonCyan.withValues(alpha: 0.7), size: 14),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Divider(color: AppColors.border, height: 1),
+              const SizedBox(height: 8),
+
+              // ── Quick Summary Badges (Tasks & Reminders) ──
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$pendingTasks Tasks',
+                            style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.bold, fontSize: 10),
+                          ),
+                          const Text('Pending Work', style: TextStyle(color: AppColors.secondaryText, fontSize: 7)),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Online',
-                          style: AppTypography.labelLarge.copyWith(
-                            fontSize: 10,
-                            color: AppColors.success,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.neonCyan.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$activeReminders Alerts',
+                            style: TextStyle(color: AppColors.neonCyan, fontWeight: FontWeight.bold, fontSize: 10),
                           ),
-                        ),
-                        Text(
-                          'Always here for you',
-                          style: AppTypography.monoSmall.copyWith(
-                            fontSize: 7,
-                            color: AppColors.secondaryText,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                          const Text('Scheduled', style: TextStyle(color: AppColors.secondaryText, fontSize: 7)),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.4)),
-                    ),
-                    child: const Icon(Icons.person_outline, color: AppColors.neonCyan, size: 14),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 8),
+              const SizedBox(height: 10),
 
-            // ── System Health ──
-            _SystemStatusCard(
-              label: 'System Health',
-              value: '87%',
-              icon: Icons.monitor_heart_rounded,
-              progress: 0.87,
-              isCircular: true,
-            ),
-            const SizedBox(height: 6),
-
-            // ── Connection ──
-            _SystemStatusCard(
-              label: 'Connection',
-              value: 'Strong',
-              icon: Icons.wifi_rounded,
-              progress: 0.95,
-              valueColor: AppColors.success,
-            ),
-            const SizedBox(height: 6),
-
-            // ── CPU ──
-            _SystemStatusCard(
-              label: 'CPU',
-              value: '32%',
-              icon: Icons.memory_rounded,
-              progress: 0.32,
-            ),
-            const SizedBox(height: 6),
-
-            // ── Storage ──
-            _SystemStatusCard(
-              label: 'Storage',
-              value: '68%',
-              icon: Icons.storage_rounded,
-              progress: 0.68,
-            ),
-
-            const Spacer(),
-
-            // ── Devices count ──
-            Text(
-              '$onlineDevices devices online',
-              style: AppTypography.monoSmall.copyWith(
-                fontSize: 7,
-                color: AppColors.mutedText,
+              // ── 4 RECENT ACTIVITIES ──
+              Text(
+                'RECENT ACTIVITIES (4)',
+                style: AppTypography.monoSmall.copyWith(
+                  color: AppColors.mutedText,
+                  fontSize: 7.5,
+                  letterSpacing: 1,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+
+              Expanded(
+                child: activities.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No recent neural logs',
+                          style: TextStyle(color: AppColors.mutedText, fontSize: 9),
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: activities.length,
+                        separatorBuilder: (_, i) => const SizedBox(height: 4),
+                        itemBuilder: (context, i) {
+                          final act = activities[i];
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardSurface,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.bolt_rounded, size: 12, color: AppColors.neonCyan),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        act.title,
+                                        style: const TextStyle(
+                                          color: AppColors.primaryWhite,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        DateFormat('hh:mm a').format(act.timestamp),
+                                        style: const TextStyle(color: AppColors.mutedText, fontSize: 7),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              const SizedBox(height: 6),
+
+              // Quick Action Bar
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: GestureDetector(
+                      onTap: () {
+                        SoundEffectsService.instance.playClick();
+                        context.go('/tasks');
+                      },
+                      child: Text(
+                        'View Tasks →',
+                        style: TextStyle(color: AppColors.neonCyan, fontSize: 8.5, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: GestureDetector(
+                      onTap: () {
+                        SoundEffectsService.instance.playClick();
+                        context.go('/reminders');
+                      },
+                      child: Text(
+                        'Reminders →',
+                        style: TextStyle(color: AppColors.neonCyan, fontSize: 8.5, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -734,7 +1026,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// HELPER WIDGETS
+// HELPER WIDGETS & PAINTERS
 // ═══════════════════════════════════════════════════════════════
 
 class _NavItem {
@@ -744,35 +1036,33 @@ class _NavItem {
   const _NavItem(this.icon, this.label, this.route);
 }
 
-/// Glassmorphism card with frosted glass effect
+/// Glassmorphic frosted card container
 class _GlassmorphicCard extends StatelessWidget {
   final Widget child;
-  final EdgeInsets padding;
 
   const _GlassmorphicCard({
     required this.child,
-    this.padding = const EdgeInsets.all(8),
   });
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          padding: padding,
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.cardSurface.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(10),
+            color: Colors.black.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: AppColors.neonCyan.withValues(alpha: 0.12),
-              width: 0.8,
+              color: AppColors.neonCyan.withValues(alpha: 0.22),
+              width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.neonCyan.withValues(alpha: 0.05),
-                blurRadius: 12,
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 10,
               ),
             ],
           ),
@@ -783,151 +1073,81 @@ class _GlassmorphicCard extends StatelessWidget {
   }
 }
 
-class _TodayItem extends StatelessWidget {
-  final IconData icon;
-  final String text;
+/// Circular dashed / solid HUD ring painter
+class _HudRingPainter extends CustomPainter {
   final Color color;
+  final bool isDashed;
 
-  const _TodayItem({
-    required this.icon,
-    required this.text,
-    required this.color,
-  });
+  _HudRingPainter({required this.color, required this.isDashed});
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 18,
-          height: 18,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color.withValues(alpha: 0.15),
-          ),
-          child: Icon(icon, size: 10, color: color),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            text,
-            style: AppTypography.bodySmall.copyWith(fontSize: 8.5, color: AppColors.primaryWhite),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    if (!isDashed) {
+      canvas.drawCircle(center, radius, paint);
+      return;
+    }
+
+    const dashCount = 28;
+    const sweep = (2 * math.pi) / dashCount;
+    for (int i = 0; i < dashCount; i++) {
+      if (i % 2 == 0) {
+        canvas.drawArc(
+          Rect.fromCircle(center: center, radius: radius),
+          i * sweep,
+          sweep * 0.6,
+          false,
+          paint,
+        );
+      }
+    }
   }
-}
-
-class _SystemStatusCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final double progress;
-  final bool isCircular;
-  final Color? valueColor;
-
-  const _SystemStatusCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.progress,
-    this.isCircular = false,
-    this.valueColor,
-  });
 
   @override
-  Widget build(BuildContext context) {
-    return _GlassmorphicCard(
-      padding: const EdgeInsets.all(8),
-      child: Row(
-        children: [
-          if (isCircular)
-            SizedBox(
-              width: 32,
-              height: 32,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 2.5,
-                    backgroundColor: AppColors.border,
-                    valueColor: const AlwaysStoppedAnimation(AppColors.neonCyan),
-                  ),
-                  Text(
-                    value,
-                    style: AppTypography.monoSmall.copyWith(
-                      fontSize: 7,
-                      color: AppColors.neonCyan,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
-                color: AppColors.primaryBlue.withValues(alpha: 0.15),
-                border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.2)),
-              ),
-              child: Icon(icon, size: 14, color: AppColors.neonCyan),
-            ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppTypography.labelSmall.copyWith(
-                    fontSize: 8,
-                    color: AppColors.secondaryText,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                if (!isCircular)
-                  Text(
-                    value,
-                    style: AppTypography.labelLarge.copyWith(
-                      fontSize: 10,
-                      color: valueColor ?? AppColors.neonCyan,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                if (!isCircular) ...[
-                  const SizedBox(height: 3),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 3,
-                      backgroundColor: AppColors.border,
-                      valueColor: AlwaysStoppedAnimation(
-                        valueColor ?? AppColors.neonCyan,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  bool shouldRepaint(covariant _HudRingPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.isDashed != isDashed;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// CUSTOM PAINTERS
-// ═══════════════════════════════════════════════════════════════
+/// Futuristic holographic corner brackets painter
+class _HoloCornerPainter extends CustomPainter {
+  const _HoloCornerPainter();
 
-/// Background HUD grid, circuit traces, and scanlines
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.neonCyan.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    const len = 12.0;
+    // Top-left
+    canvas.drawLine(const Offset(0, 0), const Offset(len, 0), paint);
+    canvas.drawLine(const Offset(0, 0), const Offset(0, len), paint);
+
+    // Top-right
+    canvas.drawLine(Offset(size.width, 0), Offset(size.width - len, 0), paint);
+    canvas.drawLine(Offset(size.width, 0), Offset(size.width, len), paint);
+
+    // Bottom-left
+    canvas.drawLine(Offset(0, size.height), Offset(len, size.height), paint);
+    canvas.drawLine(Offset(0, size.height), Offset(0, size.height - len), paint);
+
+    // Bottom-right
+    canvas.drawLine(Offset(size.width, size.height), Offset(size.width - len, size.height), paint);
+    canvas.drawLine(Offset(size.width, size.height), Offset(size.width, size.height - len), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Cyber background painter with circuit lines & scanline sweep
 class _HudBackgroundPainter extends CustomPainter {
   final Animation<double> scanProgress;
 
@@ -935,170 +1155,33 @@ class _HudBackgroundPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.neonCyan.withValues(alpha: 0.03)
+    final gridPaint = Paint()
+      ..color = AppColors.neonCyan.withValues(alpha: 0.035)
       ..strokeWidth = 0.5;
 
     // Grid lines
-    const gridSpacing = 40.0;
-    for (var x = 0.0; x < size.width; x += gridSpacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    const spacing = 40.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
     }
-    for (var y = 0.0; y < size.height; y += gridSpacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    for (double y = 0; y < size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
-    // Scan line
-    final scanY = scanProgress.value * size.height;
+    // Moving horizontal scan line
+    final scanY = size.height * scanProgress.value;
     final scanPaint = Paint()
       ..shader = LinearGradient(
         colors: [
           Colors.transparent,
-          AppColors.neonCyan.withValues(alpha: 0.06),
+          AppColors.neonCyan.withValues(alpha: 0.12),
           Colors.transparent,
         ],
-      ).createShader(Rect.fromLTWH(0, scanY - 20, size.width, 40));
-    canvas.drawRect(Rect.fromLTWH(0, scanY - 20, size.width, 40), scanPaint);
+      ).createShader(Rect.fromLTWH(0, scanY - 10, size.width, 20));
 
-    // Corner HUD brackets
-    _drawCornerBracket(canvas, size, Offset(8, 8), false, false);
-    _drawCornerBracket(canvas, size, Offset(size.width - 8, 8), true, false);
-    _drawCornerBracket(canvas, size, Offset(8, size.height - 8), false, true);
-    _drawCornerBracket(canvas, size, Offset(size.width - 8, size.height - 8), true, true);
-  }
-
-  void _drawCornerBracket(Canvas canvas, Size size, Offset pos, bool flipX, bool flipY) {
-    final bracketPaint = Paint()
-      ..color = AppColors.neonCyan.withValues(alpha: 0.15)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    const len = 20.0;
-    final dx = flipX ? -1.0 : 1.0;
-    final dy = flipY ? -1.0 : 1.0;
-
-    final path = Path()
-      ..moveTo(pos.dx + len * dx, pos.dy)
-      ..lineTo(pos.dx, pos.dy)
-      ..lineTo(pos.dx, pos.dy + len * dy);
-
-    canvas.drawPath(path, bracketPaint);
+    canvas.drawRect(Rect.fromLTWH(0, scanY - 10, size.width, 20), scanPaint);
   }
 
   @override
   bool shouldRepaint(covariant _HudBackgroundPainter oldDelegate) => true;
-}
-
-/// Central concentric HUD rings around the orb
-class _CentralHudPainter extends CustomPainter {
-  final double pulseValue;
-  final double rotationValue;
-  final bool isProcessing;
-
-  _CentralHudPainter({
-    required this.pulseValue,
-    required this.rotationValue,
-    required this.isProcessing,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = size.width / 2 - 8;
-
-    // ── Outer rings ──
-    for (var i = 0; i < 4; i++) {
-      final ringRadius = maxRadius - (i * 12) * pulseValue;
-      final ringAlpha = 0.08 + (i * 0.03);
-      final ringPaint = Paint()
-        ..color = AppColors.neonCyan.withValues(alpha: ringAlpha)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.8;
-
-      canvas.drawCircle(center, ringRadius, ringPaint);
-    }
-
-    // ── Segmented arcs (rotating) ──
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(rotationValue);
-    canvas.translate(-center.dx, -center.dy);
-
-    for (var i = 0; i < 6; i++) {
-      final arcRadius = maxRadius - 4 - (i * 6);
-      final arcRect = Rect.fromCircle(center: center, radius: arcRadius);
-      final arcPaint = Paint()
-        ..color = AppColors.neonCyan.withValues(alpha: 0.12 - i * 0.015)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0 + (i * 0.3);
-
-      final startAngle = (i * math.pi / 3) + rotationValue * (i.isEven ? 1 : -1);
-      canvas.drawArc(arcRect, startAngle, math.pi * 0.4, false, arcPaint);
-    }
-
-    // ── Radial markers ──
-    for (var i = 0; i < 12; i++) {
-      final angle = (i * math.pi / 6);
-      final innerR = maxRadius - 30;
-      final outerR = maxRadius - 20;
-
-      final p1 = Offset(
-        center.dx + innerR * math.cos(angle),
-        center.dy + innerR * math.sin(angle),
-      );
-      final p2 = Offset(
-        center.dx + outerR * math.cos(angle),
-        center.dy + outerR * math.sin(angle),
-      );
-
-      final tickPaint = Paint()
-        ..color = AppColors.neonCyan.withValues(alpha: 0.2)
-        ..strokeWidth = 1.0;
-      canvas.drawLine(p1, p2, tickPaint);
-    }
-
-    canvas.restore();
-
-    // ── Counter-rotating inner arc ──
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(-rotationValue * 0.5);
-    canvas.translate(-center.dx, -center.dy);
-
-    final innerArcRect = Rect.fromCircle(center: center, radius: maxRadius * 0.55);
-    final innerArcPaint = Paint()
-      ..color = AppColors.primaryBlue.withValues(alpha: 0.15)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawArc(innerArcRect, 0, math.pi * 1.2, false, innerArcPaint);
-
-    canvas.restore();
-
-    // ── Outer glow ──
-    final glowPaint = Paint()
-      ..color = AppColors.neonCyan.withValues(alpha: 0.04 * pulseValue)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, maxRadius * 0.4);
-    canvas.drawCircle(center, maxRadius * 0.7, glowPaint);
-
-    // ── Small indicator dots ──
-    if (isProcessing) {
-      for (var i = 0; i < 3; i++) {
-        final dotAngle = rotationValue + (i * math.pi * 2 / 3);
-        final dotR = maxRadius * 0.8;
-        final dotPos = Offset(
-          center.dx + dotR * math.cos(dotAngle),
-          center.dy + dotR * math.sin(dotAngle),
-        );
-        final dotPaint = Paint()..color = AppColors.neonCyan;
-        canvas.drawCircle(dotPos, 2.5, dotPaint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _CentralHudPainter oldDelegate) {
-    return oldDelegate.pulseValue != pulseValue ||
-        oldDelegate.rotationValue != rotationValue ||
-        oldDelegate.isProcessing != isProcessing;
-  }
 }

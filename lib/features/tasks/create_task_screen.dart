@@ -98,8 +98,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
               SoundEffectsService.instance.playClick();
               context.push('/voice');
             },
-            icon: const Icon(Icons.mic_rounded, size: 18, color: AppColors.neonCyan),
-            label: const Text('Voice', style: TextStyle(color: AppColors.neonCyan)),
+            icon: Icon(Icons.mic_rounded, size: 18, color: AppColors.neonCyan),
+            label: Text('Voice', style: TextStyle(color: AppColors.neonCyan)),
           ),
         ],
       ),
@@ -144,7 +144,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                   builder: (context, child) {
                     return Theme(
                       data: Theme.of(context).copyWith(
-                        colorScheme: const ColorScheme.dark(
+                        colorScheme: ColorScheme.dark(
                           primary: AppColors.primaryBlue,
                           surface: AppColors.secondaryBackground,
                         ),

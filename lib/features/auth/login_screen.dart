@@ -6,6 +6,9 @@ import '../../core/constants/app_constants.dart';
 import '../../shared/widgets/atlanta_button.dart';
 import '../../shared/widgets/atlanta_input.dart';
 
+import '../../core/services/auth_service.dart';
+import '../../core/services/sound_effects_service.dart';
+
 /// Atlanta Login Screen.
 ///
 /// Secure authentication interface with email/password fields,
@@ -19,7 +22,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
-  final _emailController = TextEditingController();
+  final _emailController = TextEditingController(text: 'imran@example.com');
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
@@ -51,17 +54,26 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _handleLogin() async {
+    SoundEffectsService.instance.playClick();
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    // TODO: Implement actual Supabase authentication
-    await Future.delayed(const Duration(milliseconds: 1200));
+    final success = await AuthService.instance.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
 
     if (mounted) {
       setState(() => _isLoading = false);
-      context.go('/home');
+      if (success) {
+        context.go('/home');
+      } else {
+        setState(() {
+          _errorMessage = AuthService.instance.errorMessage ?? 'Authentication failed';
+        });
+      }
     }
   }
 
@@ -269,8 +281,9 @@ class _LoginScreenState extends State<LoginScreen>
                   const SizedBox(height: 24),
 
                   // ── Create account ──
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
                         "Don't have an account? ",
@@ -279,7 +292,10 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          SoundEffectsService.instance.playClick();
+                          context.go('/register');
+                        },
                         child: Text(
                           'Create account',
                           style: AppTypography.bodySmall.copyWith(

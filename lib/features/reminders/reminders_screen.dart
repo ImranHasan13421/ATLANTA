@@ -165,7 +165,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                                 color: AppColors.neonCyan.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.alarm_rounded,
                                 color: AppColors.neonCyan,
                                 size: 16,
@@ -427,7 +427,7 @@ class _ReminderItem extends StatelessWidget {
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.schedule_rounded,
                       size: 11,
                       color: AppColors.neonCyan,

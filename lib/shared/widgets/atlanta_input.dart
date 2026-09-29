@@ -213,7 +213,7 @@ class AtlantaSearchField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-          borderSide: const BorderSide(color: AppColors.primaryBlue),
+          borderSide: BorderSide(color: AppColors.primaryBlue),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),

@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../audio/wav_synthesizer.dart';
@@ -25,7 +26,16 @@ class SoundEffectsService {
 
   bool _isInitialized = false;
 
+  bool get _isTestEnvironment {
+    try {
+      return !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+    } catch (_) {
+      return false;
+    }
+  }
+
   AudioPlayer? _getAmbientPlayer() {
+    if (_isTestEnvironment) return null;
     try {
       _ambientPlayer ??= AudioPlayer();
       return _ambientPlayer;
@@ -35,6 +45,7 @@ class SoundEffectsService {
   }
 
   AudioPlayer? _getClickPlayer() {
+    if (_isTestEnvironment) return null;
     try {
       _clickPlayer ??= AudioPlayer();
       return _clickPlayer;

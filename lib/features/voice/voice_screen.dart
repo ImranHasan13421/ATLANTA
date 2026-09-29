@@ -10,6 +10,7 @@ import '../../core/services/speech_service.dart';
 import '../../core/services/voice_service.dart';
 import '../../core/services/sound_effects_service.dart';
 import '../../core/services/brain_service.dart';
+import '../../core/services/gemini_ai_service.dart';
 
 /// Atlanta Live Voice Mode — immersive Iron Man / Stark-grade AI voice assistant.
 class VoiceScreen extends StatefulWidget {
@@ -185,7 +186,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.keyboard_command_key_rounded,
+                  Icon(Icons.keyboard_command_key_rounded,
                       color: AppColors.neonCyan, size: 20),
                   const SizedBox(width: 8),
                   Text(
@@ -213,7 +214,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.neonCyan),
+                    borderSide: BorderSide(color: AppColors.neonCyan),
                   ),
                 ),
                 onSubmitted: (text) {
@@ -568,9 +569,9 @@ class _VoiceScreenState extends State<VoiceScreen> {
                 ),
               ),
 
-              // ═══ RIGHT PANEL: Hardware Telemetry & Keyboard Input ═══
+              // ═══ RIGHT PANEL: Model Real-Time Information Box (width: 210) ═══
               Container(
-                width: 150,
+                width: 210,
                 decoration: BoxDecoration(
                   color: AppColors.secondaryBackground.withValues(alpha: 0.5),
                   border: Border(
@@ -587,13 +588,20 @@ class _VoiceScreenState extends State<VoiceScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'HARDWARE',
-                          style: AppTypography.monoSmall.copyWith(
-                            color: AppColors.neonCyan,
-                            fontSize: 8.5,
-                            letterSpacing: 1.2,
-                          ),
+                        Row(
+                          children: [
+                            Icon(Icons.psychology_rounded, color: AppColors.neonCyan, size: 14),
+                            const SizedBox(width: 5),
+                            Text(
+                              'MODEL TELEMETRY',
+                              style: AppTypography.monoSmall.copyWith(
+                                color: AppColors.neonCyan,
+                                fontSize: 8.5,
+                                letterSpacing: 1.1,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                         IconButton(
                           padding: EdgeInsets.zero,
@@ -607,27 +615,127 @@ class _VoiceScreenState extends State<VoiceScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    _TelemetryStat(label: 'LATENCY', value: '14 MS'),
+                    const SizedBox(height: 8),
+                    const Divider(color: AppColors.border, height: 1),
+                    const SizedBox(height: 8),
+
+                    // 1. ACTIVE MODEL
+                    _TelemetryStat(
+                      label: 'ACTIVE MODEL',
+                      value: GeminiAiService.instance.currentModelId.toUpperCase(),
+                      icon: Icons.auto_awesome_rounded,
+                      valueColor: AppColors.primaryWhite,
+                    ),
                     const SizedBox(height: 6),
-                    _TelemetryStat(label: 'NEURAL NET', value: 'ACTIVE'),
+
+                    // 2. ACTIVE STATUS
+                    _TelemetryStat(
+                      label: 'ACTIVE STATUS',
+                      value: _orbState == OrbState.listening
+                          ? 'LISTENING...'
+                          : (_orbState == OrbState.thinking
+                              ? 'PROCESSING...'
+                              : (_orbState == OrbState.speaking ? 'VOCALIZING...' : 'STANDBY (READY)')),
+                      icon: Icons.radar_rounded,
+                      valueColor: _orbState == OrbState.listening
+                          ? AppColors.neonCyan
+                          : (_orbState == OrbState.speaking ? AppColors.warning : AppColors.success),
+                    ),
                     const SizedBox(height: 6),
-                    _TelemetryStat(label: 'QUANTUM CORE', value: '99.8%'),
+
+                    // 3. INTENSITY
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'NEURAL INTENSITY',
+                              style: TextStyle(fontSize: 7.5, color: AppColors.mutedText, letterSpacing: 0.8),
+                            ),
+                            Text(
+                              '${(_soundLevel * 100).toInt()}%',
+                              style: TextStyle(
+                                fontSize: 8.5,
+                                color: AppColors.neonCyan,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: LinearProgressIndicator(
+                            value: _soundLevel.clamp(0.05, 1.0),
+                            minHeight: 4,
+                            backgroundColor: Colors.black.withValues(alpha: 0.4),
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.neonCyan),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 6),
-                    _TelemetryStat(label: 'AUDIO ENGINE', value: 'STEREO'),
+
+                    // 4. LATENCY
+                    _TelemetryStat(
+                      label: 'ENGINE LATENCY',
+                      value: '38 MS (LIVE)',
+                      icon: Icons.speed_rounded,
+                      valueColor: AppColors.success,
+                    ),
+                    const SizedBox(height: 6),
+
+                    // 5. CORE ARCHITECTURE
+                    _TelemetryStat(
+                      label: 'NEURAL CORE',
+                      value: 'Multimodal Mesh v2.0',
+                      icon: Icons.memory_rounded,
+                      valueColor: AppColors.secondaryText,
+                    ),
+
                     const Spacer(),
+
+                    // 6. ATLANTA INFO BOX
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.border),
+                        color: Colors.black.withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.25)),
                       ),
-                      child: Text(
-                        'ATLANTA OS v2.0\nVOICE ENGINE ACTIVE',
-                        style: AppTypography.monoSmall.copyWith(fontSize: 7, color: AppColors.mutedText),
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 5,
+                                height: 5,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.success,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                'ATLANTA SECURE RUNTIME',
+                                style: AppTypography.monoSmall.copyWith(
+                                  fontSize: 7.5,
+                                  color: AppColors.primaryWhite,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Encryption: AES-256 GCM\nThroughput: 1.2k tokens/s',
+                            style: AppTypography.monoSmall.copyWith(fontSize: 7, color: AppColors.mutedText),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -644,20 +752,43 @@ class _VoiceScreenState extends State<VoiceScreen> {
 class _TelemetryStat extends StatelessWidget {
   final String label;
   final String value;
-  const _TelemetryStat({required this.label, required this.value});
+  final IconData? icon;
+  final Color? valueColor;
+
+  const _TelemetryStat({
+    required this.label,
+    required this.value,
+    this.icon,
+    this.valueColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 7.5, color: AppColors.mutedText, letterSpacing: 0.8),
+        Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 9, color: AppColors.mutedText),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: const TextStyle(fontSize: 7.5, color: AppColors.mutedText, letterSpacing: 0.8),
+            ),
+          ],
         ),
+        const SizedBox(height: 1),
         Text(
           value,
-          style: const TextStyle(fontSize: 9.5, color: AppColors.neonCyan, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 9.5,
+            color: valueColor ?? AppColors.neonCyan,
+            fontWeight: FontWeight.bold,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -668,19 +799,20 @@ class _ControlCircle extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final Color color;
+  final Color? color;
   final bool isPrimary;
 
   const _ControlCircle({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color = AppColors.primaryBlue,
+    this.color,
     this.isPrimary = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final effectiveColor = color ?? AppColors.primaryBlue;
     final size = isPrimary ? 64.0 : 46.0;
     return GestureDetector(
       onTap: onTap,
@@ -693,17 +825,17 @@ class _ControlCircle extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isPrimary ? color : AppColors.cardSurface,
+              color: isPrimary ? effectiveColor : AppColors.cardSurface,
               border: Border.all(
                 color: isPrimary
-                    ? color.withValues(alpha: 0.8)
+                    ? effectiveColor.withValues(alpha: 0.8)
                     : AppColors.border,
                 width: 1.5,
               ),
               boxShadow: isPrimary
                   ? [
                       BoxShadow(
-                        color: color.withValues(alpha: 0.4),
+                        color: effectiveColor.withValues(alpha: 0.4),
                         blurRadius: 16,
                         spreadRadius: 2,
                       ),

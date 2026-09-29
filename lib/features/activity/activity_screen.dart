@@ -107,7 +107,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                               color: AppColors.neonCyan.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.history_rounded,
                               color: AppColors.neonCyan,
                               size: 16,
@@ -133,7 +133,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                             ),
                             child: Text(
                               '${activities.length}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppColors.neonCyan,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,

@@ -8,24 +8,24 @@ import '../../core/constants/app_constants.dart';
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
 
-  static const List<_MenuItem> _items = [
-    _MenuItem(Icons.sticky_note_2_rounded, 'Notes', '/notes',
+  static List<_MenuItem> get _items => [
+    const _MenuItem(Icons.sticky_note_2_rounded, 'Notes', '/notes',
         AppColors.warning),
-    _MenuItem(Icons.notifications_rounded, 'Reminders', '/reminders',
+    const _MenuItem(Icons.notifications_rounded, 'Reminders', '/reminders',
         AppColors.success),
-    _MenuItem(Icons.calendar_month_rounded, 'Calendar', '/calendar',
+    const _MenuItem(Icons.calendar_month_rounded, 'Calendar', '/calendar',
         AppColors.info),
     _MenuItem(Icons.history_rounded, 'Activity', '/activity',
         AppColors.primaryBlue),
-    _MenuItem(Icons.devices_rounded, 'Devices', '/devices',
+    const _MenuItem(Icons.devices_rounded, 'Devices', '/devices',
         AppColors.success),
     _MenuItem(Icons.folder_rounded, 'Files', '/files',
         AppColors.primaryBlueLight),
     _MenuItem(Icons.auto_awesome_rounded, 'Automations', '/automations',
         AppColors.secondaryBlue),
-    _MenuItem(Icons.security_rounded, 'Permissions', '/permissions',
+    const _MenuItem(Icons.security_rounded, 'Permissions', '/permissions',
         AppColors.error),
-    _MenuItem(Icons.settings_rounded, 'Settings', '/settings',
+    const _MenuItem(Icons.settings_rounded, 'Settings', '/settings',
         AppColors.secondaryText),
   ];
 

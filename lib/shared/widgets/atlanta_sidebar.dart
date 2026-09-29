@@ -174,7 +174,7 @@ class AtlantaSidebar extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: AppColors.primaryBlue.withValues(alpha: 0.2),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           'I',
                           style: TextStyle(

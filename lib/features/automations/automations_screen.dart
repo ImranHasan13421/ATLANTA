@@ -46,7 +46,7 @@ class AutomationsScreen extends StatelessWidget {
                                 color: AppColors.neonCyan.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.bolt_rounded,
                                 color: AppColors.neonCyan,
                                 size: 16,
@@ -329,7 +329,7 @@ class _AutomationWorkflowCardState extends State<_AutomationWorkflowCard> {
                 children: [
                   Row(
                     children: [
-                      const SizedBox(
+                      SizedBox(
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(
@@ -353,7 +353,7 @@ class _AutomationWorkflowCardState extends State<_AutomationWorkflowCard> {
                   LinearProgressIndicator(
                     value: _progress,
                     backgroundColor: AppColors.cardSurface,
-                    valueColor: const AlwaysStoppedAnimation(AppColors.neonCyan),
+                    valueColor: AlwaysStoppedAnimation(AppColors.neonCyan),
                   ),
                 ],
               ),
@@ -373,7 +373,7 @@ class _AutomationWorkflowCardState extends State<_AutomationWorkflowCard> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.check_circle_outline, size: 11, color: AppColors.neonCyan),
+                      Icon(Icons.check_circle_outline, size: 11, color: AppColors.neonCyan),
                       const SizedBox(width: 4),
                       Text(
                         step,

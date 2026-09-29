@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../shared/widgets/app_shell.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../features/auth/login_screen.dart';
+import '../../features/auth/register_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/assistant/assistant_screen.dart';
 import '../../features/voice/voice_screen.dart';
@@ -14,6 +15,7 @@ import '../../features/reminders/reminders_screen.dart';
 import '../../features/calendar/calendar_screen.dart';
 import '../../features/activity/activity_screen.dart';
 import '../../features/devices/devices_screen.dart';
+import '../../features/devices/mobile_node_files_screen.dart';
 import '../../features/files/files_screen.dart';
 import '../../features/automations/automations_screen.dart';
 import '../../features/permissions/permissions_screen.dart';
@@ -39,6 +41,10 @@ class AppRouter {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/voice',
@@ -112,6 +118,12 @@ class AppRouter {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: DevicesScreen(),
             ),
+            routes: [
+              GoRoute(
+                path: 'mobile-files',
+                builder: (context, state) => const MobileNodeFilesScreen(),
+              ),
+            ],
           ),
           GoRoute(
             path: '/automations',

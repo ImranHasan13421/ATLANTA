@@ -7,6 +7,8 @@ import 'core/routing/app_router.dart';
 import 'core/constants/supabase_constants.dart';
 import 'core/services/sound_effects_service.dart';
 import 'core/services/voice_service.dart';
+import 'core/services/auth_service.dart';
+import 'core/theme/theme_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,20 +36,18 @@ void main() async {
   SoundEffectsService.instance.initialize();
   VoiceService.instance.initialize();
 
-  // Initialize Supabase in background without blocking UI startup
-  Supabase.initialize(
-    url: SupabaseConstants.projectUrl,
-    publishableKey: SupabaseConstants.anonKey,
-  ).timeout(
-    const Duration(seconds: 3),
-    onTimeout: () {
-      debugPrint('Supabase initialization timed out; running in offline mode');
-      return Supabase.instance;
-    },
-  ).catchError((e) {
-    debugPrint('Supabase offline initialization note: $e');
-    return Supabase.instance;
-  });
+  // Initialize Supabase backend
+  try {
+    await Supabase.initialize(
+      url: SupabaseConstants.projectUrl,
+      anonKey: SupabaseConstants.anonKey,
+    ).timeout(const Duration(seconds: 4));
+  } catch (e) {
+    debugPrint('Supabase offline / initialization note: $e');
+  }
+
+  // Pre-initialize auth state
+  await AuthService.instance.initialize();
 
   runApp(const AtlantaApp());
 }
@@ -58,11 +58,16 @@ class AtlantaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'ATLANTA',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      routerConfig: AppRouter.router,
+    return ListenableBuilder(
+      listenable: ThemeController.instance,
+      builder: (context, _) {
+        return MaterialApp.router(
+          title: 'ATLANTA',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.darkTheme,
+          routerConfig: AppRouter.router,
+        );
+      },
     );
   }
 }

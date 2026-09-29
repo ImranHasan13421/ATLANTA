@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/services/sound_effects_service.dart';
 import '../../core/services/voice_service.dart';
+import '../../core/services/auth_service.dart';
 import '../../shared/widgets/atlanta_orb.dart';
 import '../../shared/widgets/status_indicator.dart';
 
@@ -67,10 +68,14 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 1000));
     if (mounted) setState(() => _sessionReady = true);
 
-    // Stage 5: Transition to Dashboard exactly at 6.0 seconds (full audio duration)
+    // Stage 5: Transition to Dashboard or Login based on authentication session
     await Future.delayed(const Duration(milliseconds: 800));
     if (mounted) {
-      context.go('/home');
+      if (AuthService.instance.isAuthenticated) {
+        context.go('/home');
+      } else {
+        context.go('/login');
+      }
     }
   }
 
@@ -202,7 +207,7 @@ class _SplashScreenState extends State<SplashScreen>
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.security_rounded, color: AppColors.neonCyan, size: 14),
+                              Icon(Icons.security_rounded, color: AppColors.neonCyan, size: 14),
                               const SizedBox(width: 6),
                               Text(
                                 'SYSTEM DIAGNOSTICS',

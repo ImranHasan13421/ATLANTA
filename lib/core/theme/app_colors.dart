@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'theme_controller.dart';
 
 /// Atlanta Design System — Color Tokens.
+/// Dynamically reactive to [ThemeController.instance] accent color changes.
 class AppColors {
   AppColors._();
 
-  // ── Primary ──────────────────────────────────────────────
-  static const Color primaryBlue = Color(0xFF1D6FE8);
-  static const Color secondaryBlue = Color(0xFF2F2E98);
-  static const Color primaryBlueLight = Color(0xFF4D9BFF);
-  static const Color neonCyan = Color(0xFF00F0FF);
-  static const Color neuralPurple = Color(0xFF7928CA);
+  // ── Primary & Accent Colors (Dynamic) ────────────────────
+  static Color get primaryBlue => ThemeController.instance.primary;
+  static Color get secondaryBlue => ThemeController.instance.secondary;
+  static Color get primaryBlueLight => ThemeController.instance.primaryLight;
+  static Color get neonCyan => ThemeController.instance.neon;
+  static Color get neuralPurple => ThemeController.instance.currentAccent == AtlantaAccent.purple
+      ? const Color(0xFFC084FC)
+      : const Color(0xFF7928CA);
 
   // ── Backgrounds ──────────────────────────────────────────
   static const Color deepBackground = Color(0xFF050A12);
@@ -26,7 +30,7 @@ class AppColors {
   // ── Border ───────────────────────────────────────────────
   static const Color border = Color(0xFF23354D);
   static const Color borderLight = Color(0xFF2D4060);
-  static const Color borderFocus = Color(0xFF1D6FE8);
+  static Color get borderFocus => ThemeController.instance.borderFocus;
 
   // ── Status ───────────────────────────────────────────────
   static const Color success = Color(0xFF22C55E);
@@ -37,23 +41,23 @@ class AppColors {
   static const Color errorMuted = Color(0xFF991B1B);
   static const Color info = Color(0xFF3B82F6);
 
-  // ── Glow / Effects ───────────────────────────────────────
-  static const Color primaryGlow = Color(0x331D6FE8);
-  static const Color primaryGlowStrong = Color(0x551D6FE8);
-  static const Color orbGlow = Color(0x661D6FE8);
-  static const Color orbCore = Color(0xFF4D9BFF);
-  static const Color orbInner = Color(0xFF1D6FE8);
-  static const Color orbOuter = Color(0xFF0D3F8C);
+  // ── Glow / Effects (Dynamic) ──────────────────────────────
+  static Color get primaryGlow => ThemeController.instance.primaryGlow;
+  static Color get primaryGlowStrong => ThemeController.instance.primaryGlowStrong;
+  static Color get orbGlow => ThemeController.instance.orbGlow;
+  static Color get orbCore => ThemeController.instance.orbCore;
+  static Color get orbInner => ThemeController.instance.orbInner;
+  static Color get orbOuter => ThemeController.instance.orbOuter;
 
   // ── Priority ─────────────────────────────────────────────
   static const Color priorityLow = Color(0xFF22C55E);
   static const Color priorityMedium = Color(0xFFF59E0B);
   static const Color priorityHigh = Color(0xFFEF4444);
 
-  // ── Navigation ───────────────────────────────────────────
-  static const Color navActive = Color(0xFF1D6FE8);
+  // ── Navigation (Dynamic) ──────────────────────────────────
+  static Color get navActive => ThemeController.instance.navActive;
   static const Color navInactive = Color(0xFF5A6F8A);
-  static const Color navActiveBackground = Color(0x1A1D6FE8);
+  static Color get navActiveBackground => ThemeController.instance.navActiveBackground;
 
   // ── Shimmer ──────────────────────────────────────────────
   static const Color shimmerBase = Color(0xFF111C2B);

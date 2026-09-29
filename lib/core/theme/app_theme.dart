@@ -12,7 +12,7 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.deepBackground,
       primaryColor: AppColors.primaryBlue,
       canvasColor: AppColors.deepBackground,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         primary: AppColors.primaryBlue,
         secondary: AppColors.secondaryBlue,
         surface: AppColors.cardSurface,
@@ -60,7 +60,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primaryBlue, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -196,11 +196,11 @@ class AppTheme {
           return AppColors.border;
         }),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.primaryBlue,
         foregroundColor: AppColors.primaryWhite,
         elevation: 4,
-        shape: CircleBorder(),
+        shape: const CircleBorder(),
       ),
       tabBarTheme: TabBarThemeData(
         labelColor: AppColors.primaryBlue,

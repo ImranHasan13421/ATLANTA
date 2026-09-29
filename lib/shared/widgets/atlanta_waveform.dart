@@ -11,8 +11,8 @@ class AtlantaWaveform extends StatefulWidget {
   final double soundLevel; // 0.0 to 1.0
   final int barCount;
   final double height;
-  final Color primaryColor;
-  final Color secondaryColor;
+  final Color? primaryColor;
+  final Color? secondaryColor;
 
   const AtlantaWaveform({
     super.key,
@@ -21,8 +21,8 @@ class AtlantaWaveform extends StatefulWidget {
     this.soundLevel = 0.0,
     this.barCount = 28,
     this.height = 64,
-    this.primaryColor = AppColors.neonCyan,
-    this.secondaryColor = AppColors.primaryBlue,
+    this.primaryColor,
+    this.secondaryColor,
   });
 
   @override
@@ -61,8 +61,8 @@ class _AtlantaWaveformState extends State<AtlantaWaveform>
             isSpeaking: widget.isSpeaking,
             soundLevel: widget.soundLevel,
             barCount: widget.barCount,
-            primaryColor: widget.primaryColor,
-            secondaryColor: widget.secondaryColor,
+            primaryColor: widget.primaryColor ?? AppColors.neonCyan,
+            secondaryColor: widget.secondaryColor ?? AppColors.primaryBlue,
           ),
         );
       },

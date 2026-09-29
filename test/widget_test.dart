@@ -78,6 +78,8 @@ void main() {
     expect(find.text('ATLANTA'), findsWidgets);
     // Should have the AI core orb
     expect(find.byType(AtlantaOrb), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
   });
 
   testWidgets('HomeScreen renders desktop layout with system status cards', (WidgetTester tester) async {
@@ -92,14 +94,15 @@ void main() {
     );
 
     expect(find.byType(HomeScreen), findsOneWidget);
-    // System status cards in right section
-    expect(find.text('System Health'), findsOneWidget);
-    expect(find.text('Connection'), findsOneWidget);
-    expect(find.text('CPU'), findsOneWidget);
-    expect(find.text('Storage'), findsOneWidget);
-    // TODAY card in left section
-    expect(find.text('TODAY'), findsOneWidget);
-    // Online status
-    expect(find.text('Online'), findsOneWidget);
+    // Live Telemetry on Left side
+    expect(find.text('LIVE TELEMETRY'), findsOneWidget);
+    expect(find.text('CPU Load'), findsOneWidget);
+    expect(find.text('Used Storage'), findsOneWidget);
+    // Operations & Tasks on Right side
+    expect(find.text('OPERATIONS & TASKS'), findsOneWidget);
+    // AI Orb
+    expect(find.byType(AtlantaOrb), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
   });
 }

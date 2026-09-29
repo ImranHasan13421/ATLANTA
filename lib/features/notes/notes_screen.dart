@@ -81,7 +81,7 @@ class _NotesScreenState extends State<NotesScreen> {
                                 color: AppColors.neonCyan.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.note_alt_rounded,
                                 color: AppColors.neonCyan,
                                 size: 16,
@@ -107,7 +107,7 @@ class _NotesScreenState extends State<NotesScreen> {
                               ),
                               child: Text(
                                 '${notes.length}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppColors.neonCyan,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -159,8 +159,8 @@ class _NotesScreenState extends State<NotesScreen> {
                               SoundEffectsService.instance.playClick();
                               context.push('/voice');
                             },
-                            icon: const Icon(Icons.mic_rounded, size: 15, color: AppColors.neonCyan),
-                            label: const Text(
+                            icon: Icon(Icons.mic_rounded, size: 15, color: AppColors.neonCyan),
+                            label: Text(
                               'Voice Dictation',
                               style: TextStyle(
                                 fontSize: 11,

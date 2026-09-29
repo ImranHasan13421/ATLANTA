@@ -108,7 +108,7 @@ class _AtlantaHudOverlayState extends State<AtlantaHudOverlay>
               Container(
                 width: 6,
                 height: 6,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.neonCyan,
                   shape: BoxShape.circle,
                 ),
